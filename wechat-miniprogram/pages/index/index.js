@@ -69,7 +69,7 @@ Page({
 
   setField(event) {
     const key = event.currentTarget.dataset.key
-    this.setData({ [`draft.${key}`]: event.detail.value })
+    this.setData({ [`draft.${key}`]: key === 'dateTime' ? event.detail.value.replace('T', ' ') : event.detail.value })
   },
 
   setChoice(event) {
@@ -227,7 +227,7 @@ function hasRedFlags(record) {
 }
 
 function sortRecords(records) {
-  return records.slice().sort((a, b) => new Date(b.dateTime).getTime() - new Date(a.dateTime).getTime())
+  return records.slice().sort((a, b) => parseRecordDate(b.dateTime).getTime() - parseRecordDate(a.dateTime).getTime())
 }
 
 function normalizeRecord(record) {
@@ -249,10 +249,10 @@ function normalizeRecord(record) {
 function buildStats(records) {
   const now = new Date()
   const daysAgo = (days) => new Date(now.getFullYear(), now.getMonth(), now.getDate() - days)
-  const last7 = records.filter((record) => new Date(record.dateTime) >= daysAgo(7))
-  const last14 = records.filter((record) => new Date(record.dateTime) >= daysAgo(14))
+  const last7 = records.filter((record) => parseRecordDate(record.dateTime) >= daysAgo(7))
+  const last14 = records.filter((record) => parseRecordDate(record.dateTime) >= daysAgo(14))
   const previous7 = records.filter((record) => {
-    const date = new Date(record.dateTime)
+    const date = parseRecordDate(record.dateTime)
     return date >= daysAgo(14) && date < daysAgo(7)
   })
   const recent = sortRecords(records).slice(0, 3)
@@ -283,7 +283,7 @@ function topItems(items) {
 }
 
 function recordStreak(records) {
-  const days = new Set(records.map((record) => new Date(record.dateTime).toISOString().slice(0, 10)))
+  const days = new Set(records.map((record) => formatDayKey(parseRecordDate(record.dateTime))))
   let streak = 0
   const cursor = new Date()
   while (days.has(cursor.toISOString().slice(0, 10))) {
@@ -305,5 +305,21 @@ function csvCell(value) {
 
 function formatInputDate(date) {
   const pad = (value) => String(value).padStart(2, '0')
-  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}`
+}
+
+function parseRecordDate(value) {
+  if (!value) return new Date()
+  if (value instanceof Date) return value
+  var text = String(value).replace('T', ' ')
+  var match = text.match(/^(\d{4})-(\d{2})-(\d{2})[ T](\d{2}):(\d{2})/)
+  if (match) {
+    return new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3]), Number(match[4]), Number(match[5]))
+  }
+  return new Date(value)
+}
+
+function formatDayKey(date) {
+  const pad = (value) => String(value).padStart(2, '0')
+  return date.getFullYear() + '-' + pad(date.getMonth() + 1) + '-' + pad(date.getDate())
 }

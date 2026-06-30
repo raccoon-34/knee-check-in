@@ -1,0 +1,18 @@
+{
+  "name": "Knee Check-in",
+  "short_name": "Knee Check",
+  "description": "家庭自用的膝盖不适记录工具，不用于医学诊断。",
+  "start_url": ".",
+  "display": "standalone",
+  "scope": ".",
+  "background_color": "#f7f4ed",
+  "theme_color": "#7aa48f",
+  "icons": [
+    {
+      "src": "icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

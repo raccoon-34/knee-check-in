@@ -1,0 +1,11 @@
+page {
+  background: #f7f4ed;
+  color: #26322c;
+  font-size: 34rpx;
+  line-height: 1.5;
+}
+
+button {
+  border-radius: 16rpx;
+  font-size: 32rpx;
+}

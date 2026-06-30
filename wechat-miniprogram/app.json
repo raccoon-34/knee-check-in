@@ -1,0 +1,13 @@
+{
+  "pages": [
+    "pages/index/index"
+  ],
+  "window": {
+    "navigationBarTitleText": "Knee Check-in",
+    "navigationBarBackgroundColor": "#7aa48f",
+    "navigationBarTextStyle": "white",
+    "backgroundColor": "#f7f4ed"
+  },
+  "style": "v2",
+  "sitemapLocation": "sitemap.json"
+}

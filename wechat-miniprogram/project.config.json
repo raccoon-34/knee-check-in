@@ -1,0 +1,13 @@
+{
+  "appid": "wx6677e400d42b84b9",
+  "projectname": "Knee Check-in",
+  "compileType": "miniprogram",
+  "libVersion": "latest",
+  "setting": {
+    "urlCheck": true,
+    "es6": true,
+    "enhance": true,
+    "postcss": true,
+    "minified": true
+  }
+}

@@ -1,0 +1,216 @@
+<wxs module="util">
+function contains(arr, value) {
+  if (!arr) return false
+  for (var i = 0; i < arr.length; i++) {
+    if (arr[i] === value) return true
+  }
+  return false
+}
+function textList(arr) {
+  if (!arr || arr.length === 0) return ''
+  var text = ''
+  for (var i = 0; i < arr.length; i++) {
+    text += (i === 0 ? '' : '\u3001') + arr[i]
+  }
+  return text
+}
+function hasRedFlags(arr) {
+  if (!arr) return false
+  for (var i = 0; i < arr.length; i++) {
+    if (arr[i] !== '\u90fd\u6ca1\u6709') return true
+  }
+  return false
+}
+function timingText(arr) {
+  var text = textList(arr)
+  return text || '\u672a\u8bb0\u5f55'
+}
+function redFlagText(arr) {
+  return hasRedFlags(arr) ? textList(arr) : '\u65e0'
+}
+function passFilter(record, filter) {
+  if (filter === '\u5168\u90e8') return true
+  if (filter === '\u6709\u5371\u9669\u4fe1\u53f7') return hasRedFlags(record.redFlags)
+  if (filter === '\u8bc4\u5206>=3') return record.overallScore >= 3
+  return record.kneeSide === filter
+}
+module.exports = { contains: contains, textList: textList, hasRedFlags: hasRedFlags, timingText: timingText, redFlagText: redFlagText, passFilter: passFilter }
+</wxs>
+<view class="app">
+  <view class="header">
+    <view class="eyebrow">家庭自用记录工具</view>
+    <view class="title">Knee Check-in</view>
+    <view class="subtitle">只用于记录和观察趋势，不能替代医生诊断。</view>
+  </view>
+
+  <view class="notice">如果出现明显肿胀、发热发红、不能承重、膝盖卡住伸不直、打软腿、突然严重疼痛，应该及时就医。</view>
+
+  <view class="tabs">
+    <block wx:for="{{tabs}}" wx:key="*this">
+      <button class="tab {{activeTab === index ? 'active' : ''}}" data-index="{{index}}" bindtap="switchTab">{{item}}</button>
+    </block>
+  </view>
+
+  <view wx:if="{{activeTab === 0}}" class="panel">
+    <view class="section-head">
+      <view>
+        <view class="eyebrow">{{editingId ? '编辑记录' : '今日打卡'}}</view>
+        <view class="step">{{step + 1}}/15</view>
+      </view>
+      <button wx:if="{{editingId}}" class="ghost small" bindtap="cancelEdit">取消编辑</button>
+    </view>
+    <view class="progress"><view class="progress-inner" style="width: {{(step + 1) / totalSteps * 100}}%;"></view></view>
+
+    <view wx:if="{{step === 0}}" class="card">
+      <view class="card-title">一、基础信息</view>
+      <view class="field-label">日期和时间</view>
+      <input class="input" value="{{draft.dateTime}}" data-key="dateTime" bindinput="setField" />
+      <view class="field-label">今天记录的是哪边膝盖</view>
+      <view class="choices">
+        <button wx:for="{{options.kneeSides}}" wx:key="*this" class="choice {{draft.kneeSide === item ? 'selected' : ''}}" data-key="kneeSide" data-value="{{item}}" bindtap="setChoice">{{item}}</button>
+      </view>
+    </view>
+
+    <view wx:if="{{step === 1}}" class="card">
+      <view class="card-title">二、今天的整体状态</view>
+      <view class="choices">
+        <button wx:for="{{options.overallScores}}" wx:key="*this" class="choice {{draft.overallScore === index ? 'selected' : ''}}" data-key="overallScore" data-value="{{item}}" bindtap="setChoice">{{item}}</button>
+      </view>
+    </view>
+
+    <view wx:if="{{step === 2}}" class="card">
+      <view class="card-title">二、持续时间</view>
+      <view class="choices"><button wx:for="{{options.durations}}" wx:key="*this" class="choice {{draft.duration === item ? 'selected' : ''}}" data-key="duration" data-value="{{item}}" bindtap="setChoice">{{item}}</button></view>
+    </view>
+
+    <view wx:if="{{step === 3}}" class="card">
+      <view class="card-title">三、不适位置</view>
+      <view class="choices"><button wx:for="{{options.locations}}" wx:key="*this" class="choice {{util.contains(draft.locations, item) ? 'selected' : ''}}" data-key="locations" data-value="{{item}}" bindtap="toggleChoice">{{item}}</button></view>
+    </view>
+
+    <view wx:if="{{step === 4}}" class="card">
+      <view class="card-title">四、出现时机</view>
+      <view class="choices"><button wx:for="{{options.timings}}" wx:key="*this" class="choice {{util.contains(draft.timing, item) ? 'selected' : ''}}" data-key="timing" data-value="{{item}}" bindtap="toggleChoice">{{item}}</button></view>
+    </view>
+
+    <view wx:if="{{step === 5}}" class="card">
+      <view class="card-title">五、今天可能的诱因</view>
+      <view class="choices"><button wx:for="{{options.triggers}}" wx:key="*this" class="choice {{util.contains(draft.triggers, item) ? 'selected' : ''}}" data-key="triggers" data-value="{{item}}" bindtap="toggleChoice">{{item}}</button></view>
+    </view>
+
+    <view wx:if="{{step === 6}}" class="card">
+      <view class="card-title">五、跳操强度</view>
+      <view class="choices"><button wx:for="{{options.exerciseIntensities}}" wx:key="*this" class="choice {{draft.exerciseIntensity === item ? 'selected' : ''}}" data-key="exerciseIntensity" data-value="{{item}}" bindtap="setChoice">{{item}}</button></view>
+    </view>
+
+    <view wx:if="{{step === 7}}" class="card">
+      <view class="card-title">五、跳操时长</view>
+      <view class="choices"><button wx:for="{{options.exerciseDurations}}" wx:key="*this" class="choice {{draft.exerciseDuration === item ? 'selected' : ''}}" data-key="exerciseDuration" data-value="{{item}}" bindtap="setChoice">{{item}}</button></view>
+    </view>
+
+    <view wx:if="{{step === 8}}" class="card">
+      <view class="card-title">六、活动后的变化</view>
+      <view class="choices"><button wx:for="{{options.activityChanges}}" wx:key="*this" class="choice {{draft.activityChange === item ? 'selected' : ''}}" data-key="activityChange" data-value="{{item}}" bindtap="setChoice">{{item}}</button></view>
+    </view>
+
+    <view wx:if="{{step === 9}}" class="card">
+      <view class="card-title">六、休息后的变化</view>
+      <view class="choices"><button wx:for="{{options.restChanges}}" wx:key="*this" class="choice {{draft.restChange === item ? 'selected' : ''}}" data-key="restChange" data-value="{{item}}" bindtap="setChoice">{{item}}</button></view>
+    </view>
+
+    <view wx:if="{{step === 10}}" class="card">
+      <view class="card-title">七、缓解方式</view>
+      <view class="choices"><button wx:for="{{options.reliefMethods}}" wx:key="*this" class="choice {{util.contains(draft.reliefMethods, item) ? 'selected' : ''}}" data-key="reliefMethods" data-value="{{item}}" bindtap="toggleChoice">{{item}}</button></view>
+    </view>
+
+    <view wx:if="{{step === 11}}" class="card">
+      <view class="card-title">七、缓解效果</view>
+      <view class="choices"><button wx:for="{{options.reliefEffects}}" wx:key="*this" class="choice {{draft.reliefEffect === item ? 'selected' : ''}}" data-key="reliefEffect" data-value="{{item}}" bindtap="setChoice">{{item}}</button></view>
+    </view>
+
+    <view wx:if="{{step === 12}}" class="card">
+      <view class="card-title">八、危险信号</view>
+      <view class="choices"><button wx:for="{{options.redFlags}}" wx:key="*this" class="choice {{util.contains(draft.redFlags, item) ? 'selected' : ''}}" data-key="redFlags" data-value="{{item}}" bindtap="toggleChoice">{{item}}</button></view>
+    </view>
+
+    <view wx:if="{{step === 13}}" class="card">
+      <view class="card-title">九、可选备注</view>
+      <textarea class="textarea" value="{{draft.note}}" placeholder="例如今天走很多路、鞋不舒服、跳操后明显、睡眠不好等。" bindinput="setNote"></textarea>
+    </view>
+
+    <view wx:if="{{step === 14}}" class="card">
+      <view class="card-title">提交前确认</view>
+      <view class="review-row"><text>时间</text><text>{{draft.dateTime}}</text></view>
+      <view class="review-row"><text>膝盖</text><text>{{draft.kneeSide}}</text></view>
+      <view class="review-row"><text>状态</text><text>{{draft.overallScore}} 分</text></view>
+      <view class="review-row"><text>危险信号</text><text>{{util.textList(draft.redFlags)}}</text></view>
+      <view class="hint">提交后仍可在历史记录中编辑或删除。</view>
+    </view>
+
+    <view class="actions">
+      <button class="secondary" disabled="{{step === 0}}" bindtap="prevStep">上一步</button>
+      <button wx:if="{{step < totalSteps - 1}}" bindtap="nextStep">下一步</button>
+      <button wx:else bindtap="submitRecord">{{editingId ? '保存修改' : '提交记录'}}</button>
+    </view>
+  </view>
+
+  <view wx:if="{{activeTab === 1}}" class="panel">
+    <view class="section-head"><view><view class="eyebrow">共 {{records.length}} 条</view><view class="step">历史记录</view></view></view>
+    <view class="filters">
+      <button wx:for="{{filters}}" wx:key="*this" class="filter {{filter === item ? 'selected' : ''}}" data-value="{{item}}" bindtap="setFilter">{{item}}</button>
+    </view>
+    <block wx:for="{{records}}" wx:key="id">
+      <view wx:if="{{util.passFilter(item, filter)}}" class="record-card">
+        <view class="record-title">{{item.dateTime}}</view>
+        <view>{{item.kneeSide}} · 整体状态 {{item.overallScore}} 分</view>
+        <view>最明显时机：{{util.timingText(item.timing)}}</view>
+        <view class="{{util.hasRedFlags(item.redFlags) ? 'danger-text' : ''}}">危险信号：{{util.redFlagText(item.redFlags)}}</view>
+        <view class="record-actions">
+          <button class="secondary" data-id="{{item.id}}" bindtap="editRecord">编辑</button>
+          <button class="ghost danger" data-id="{{item.id}}" bindtap="deleteRecord">删除</button>
+        </view>
+      </view>
+    </block>
+    <view wx:if="{{records.length === 0}}" class="empty">还没有记录。</view>
+  </view>
+
+  <view wx:if="{{activeTab === 2}}" class="panel">
+    <view class="section-head"><view><view class="eyebrow">观察趋势，不做诊断</view><view class="step">趋势概览</view></view></view>
+    <view wx:if="{{stats.hasAnyRedFlags}}" class="alert">曾记录到危险信号。若相关情况持续、加重或反复出现，建议及时联系医生或康复专业人员。</view>
+    <view class="stat-grid">
+      <view class="stat"><text>最近7天平均</text><strong>{{stats.avg7}}</strong></view>
+      <view class="stat"><text>最近14天平均</text><strong>{{stats.avg14}}</strong></view>
+      <view class="stat"><text>最近7天最高分</text><strong>{{stats.max7}}</strong></view>
+      <view class="stat"><text>连续记录</text><strong>{{stats.streak}} 天</strong></view>
+    </view>
+    <view class="card">
+      <view class="card-title">常见触发因素</view>
+      <view wx:for="{{stats.topTriggers}}" wx:key="name" class="bar-row"><text>{{item.name}}</text><text>{{item.count}} 次</text></view>
+      <view wx:if="{{stats.topTriggers.length === 0}}" class="empty">暂无数据</view>
+    </view>
+    <view class="card">
+      <view class="card-title">常见位置</view>
+      <view wx:for="{{stats.topLocations}}" wx:key="name" class="bar-row"><text>{{item.name}}</text><text>{{item.count}} 次</text></view>
+      <view wx:if="{{stats.topLocations.length === 0}}" class="empty">暂无数据</view>
+    </view>
+    <view wx:if="{{stats.rising}}" class="tip">最近一周不适程度有上升趋势，建议减少高冲击运动并继续观察。</view>
+    <view wx:if="{{stats.threeHigh}}" class="tip">近期多次出现轻微疼痛或更明显不适，建议考虑咨询医生或康复专业人员。</view>
+  </view>
+
+  <view wx:if="{{activeTab === 3}}" class="panel">
+    <view class="section-head"><view><view class="eyebrow">本地保存</view><view class="step">设置/说明</view></view></view>
+    <view class="card">
+      <view class="card-title">免责声明</view>
+      <view>本工具只用于日常记录，不能替代医生诊断，也不根据记录判断病因。</view>
+      <view class="hint">数据只保存在当前微信小程序本地。如果换手机、清理微信缓存或删除小程序，数据可能丢失。</view>
+    </view>
+    <view class="card">
+      <view class="card-title">数据管理</view>
+      <button bindtap="copyCsv">复制 CSV</button>
+      <button bindtap="copyJson">复制 JSON</button>
+      <textarea class="textarea" value="{{importText}}" placeholder="把之前导出的 JSON 粘贴到这里，再点导入 JSON。" bindinput="setImportText"></textarea>
+      <button class="secondary" bindtap="importJson">导入 JSON</button>
+      <button class="ghost danger" bindtap="clearAll">清空全部数据</button>
+    </view>
+  </view>
+</view>

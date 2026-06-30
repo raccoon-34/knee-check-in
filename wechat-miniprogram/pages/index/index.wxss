@@ -133,12 +133,20 @@
   box-sizing: border-box;
   border: 2rpx solid #d7d1c4;
   border-radius: 16rpx;
-  padding: 20rpx;
   background: #fffdf8;
+}
+
+.input {
+  height: 88rpx;
+  min-height: 88rpx;
+  line-height: 88rpx;
+  padding: 0 20rpx;
+  font-size: 30rpx;
 }
 
 .textarea {
   min-height: 180rpx;
+  padding: 20rpx;
 }
 
 .choices,
@@ -239,3 +247,4 @@ button[disabled] {
   color: #315541;
   font-size: 44rpx;
 }
+
